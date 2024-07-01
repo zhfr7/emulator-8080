@@ -17,7 +17,13 @@ use super::{parse_byte_tag, parse_condition, parse_u16};
 pub fn parse_branch_instruction(input: &[u8]) -> IResult<&[u8], BI> {
     alt((
         // Jump
-        map(preceded(parse_byte_tag(0b11000011), parse_u16), BI::Jump),
+        map(
+            preceded(
+                alt((parse_byte_tag(0b11000011), parse_byte_tag(0b11001011))),
+                parse_u16,
+            ),
+            BI::Jump,
+        ),
         // ConditionalJump
         map(
             tuple((
@@ -31,7 +37,18 @@ pub fn parse_branch_instruction(input: &[u8]) -> IResult<&[u8], BI> {
             |(condition, address)| BI::ConditionalJump(condition, address),
         ),
         // Call
-        map(preceded(parse_byte_tag(0b11001101), parse_u16), BI::Call),
+        map(
+            preceded(
+                alt((
+                    parse_byte_tag(0b11001101),
+                    parse_byte_tag(0b11011101),
+                    parse_byte_tag(0b11101101),
+                    parse_byte_tag(0b11111101),
+                )),
+                parse_u16,
+            ),
+            BI::Call,
+        ),
         // ConditionalCall
         map(
             tuple((
@@ -45,7 +62,10 @@ pub fn parse_branch_instruction(input: &[u8]) -> IResult<&[u8], BI> {
             |(condition, address)| BI::ConditionalCall(condition, address),
         ),
         // Return
-        map(parse_byte_tag(0b11001001), |_| BI::Return),
+        map(
+            alt((parse_byte_tag(0b11001001), parse_byte_tag(0b11011001))),
+            |_| BI::Return,
+        ),
         // ConditionalReturn
         map(
             bits(delimited(

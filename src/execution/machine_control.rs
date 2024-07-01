@@ -38,7 +38,7 @@ pub fn execute_machine_control_instruction(state: &mut State, instruction: &MCI)
                 .set(l_address, state.registers.get(&Register::L));
             state
                 .memory
-                .set(h_address, state.registers.get(&Register::L));
+                .set(h_address, state.registers.get(&Register::H));
 
             state.registers.set(&Register::L, l_byte);
             state.registers.set(&Register::H, h_byte);
@@ -52,11 +52,13 @@ pub fn execute_machine_control_instruction(state: &mut State, instruction: &MCI)
             let input_value = state.inputs.get(*port);
 
             state.registers.set(&Register::A, input_value);
+            state.increment_program_counter();
         }
         MCI::Output(port) => {
             let output_value = state.registers.get(&Register::A);
 
             state.outputs.set(*port, output_value);
+            state.increment_program_counter();
         }
         MCI::EnableInterrupts => {
             state.interrupt_enabled = true;

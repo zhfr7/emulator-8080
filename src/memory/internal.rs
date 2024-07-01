@@ -3,11 +3,11 @@ use crate::memory::Address;
 use super::AddressableMemory;
 
 #[derive(Debug)]
-pub struct InternalMemory([u8; u16::MAX as usize]);
+pub struct InternalMemory([u8; u16::MAX as usize + 1]);
 
 impl InternalMemory {
     pub fn new() -> Self {
-        InternalMemory([0; u16::MAX as usize])
+        InternalMemory([0; u16::MAX as usize + 1])
     }
 }
 

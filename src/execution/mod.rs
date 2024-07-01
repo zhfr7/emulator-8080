@@ -14,7 +14,7 @@ mod machine_control;
 
 fn add(x: u8, y: u8) -> (u8, bool, bool) {
     let (result, carry) = x.overflowing_add(y);
-    let aux_carry = (x & 15).wrapping_add(y & 15) > 16;
+    let aux_carry = (result >> 4) != (x >> 4);
 
     (result, carry, aux_carry)
 }
@@ -33,10 +33,11 @@ fn sub(x: u8, y: u8) -> (u8, bool, bool) {
 }
 
 fn sub_with_borrow(x: u8, y: u8, carry: bool) -> (u8, bool, bool) {
-    let (r_1, c_1, ac_1) = add_with_carry(!y, 1, carry);
-    let (r_2, c_2, ac_2) = add(x, r_1);
+    let (r_1, c_1, ac_1) = add(y, if carry { 1 } else { 0 });
+    let (r_2, c_2, ac_2) = add(!r_1, 1);
+    let (r_3, c_3, ac_3) = add(x, r_2);
 
-    (r_2, !(c_1 || c_2), ac_1 || ac_2)
+    (r_3, !(c_1 || c_2 || c_3), ac_1 || ac_2 || ac_3)
 }
 
 pub fn execute_instruction(state: &mut State, instruction: &Instruction) {

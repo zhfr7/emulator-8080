@@ -8,6 +8,8 @@ use crate::{
     state::State,
 };
 
+pub mod test;
+
 pub struct System {
     state: State,
     interrupt_instruction: Option<Instruction>,
@@ -22,23 +24,15 @@ impl System {
     }
 
     pub fn load_program(&mut self, program_bytecode: Vec<u8>) {
-        self.load_program_at(program_bytecode, 0);
-    }
-
-    pub fn load_program_at(&mut self, program_bytecode: Vec<u8>, start: u16) {
-        let address_end = start.wrapping_add(program_bytecode.len() as u16);
+        let address_end = program_bytecode.len() as u16;
 
         self.state
             .memory
-            .set_range(start, address_end, program_bytecode);
+            .set_range(0x00, address_end, program_bytecode);
     }
 
     pub fn read_memory_region(&self, address_start: u16, address_end: u16) -> Vec<u8> {
         self.state.memory.get_range(address_start, address_end)
-    }
-
-    pub fn set_program_counter(&mut self, address: u16) {
-        self.state.program_counter = address;
     }
 
     fn get_current_instruction(&self) -> Instruction {

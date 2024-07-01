@@ -9,7 +9,7 @@ fn update_state_from_value(state: &mut State, value: u8) {
     state.registers.set(&Register::A, value);
     state.registers.set_zero_sign_parity_flags(value);
     state.registers.set_carry_flag(false);
-    state.registers.set_carry_flag(false);
+    state.registers.set_aux_carry_flag(false);
 }
 
 pub fn execute_logical_instruction(state: &mut State, instruction: &LI) {
@@ -30,6 +30,8 @@ pub fn execute_logical_instruction(state: &mut State, instruction: &LI) {
             let accum_value = state.registers.get(&Register::A);
 
             update_state_from_value(state, value & accum_value);
+
+            state.increment_program_counter();
         }
         LI::Xor(register) => {
             let value = state.registers.get(register);
@@ -47,6 +49,8 @@ pub fn execute_logical_instruction(state: &mut State, instruction: &LI) {
             let accum_value = state.registers.get(&Register::A);
 
             update_state_from_value(state, value ^ accum_value);
+
+            state.increment_program_counter();
         }
         LI::Or(register) => {
             let value = state.registers.get(register);
@@ -64,6 +68,8 @@ pub fn execute_logical_instruction(state: &mut State, instruction: &LI) {
             let accum_value = state.registers.get(&Register::A);
 
             update_state_from_value(state, value | accum_value);
+
+            state.increment_program_counter();
         }
         LI::Compare(register) => {
             let value = state.registers.get(register);
@@ -93,6 +99,7 @@ pub fn execute_logical_instruction(state: &mut State, instruction: &LI) {
             state.registers.set_zero_sign_parity_flags(difference);
             state.registers.set_carry_flag(carry);
             state.registers.set_aux_carry_flag(aux_carry);
+            state.increment_program_counter();
         }
         LI::RotateLeft => {
             let accum_value = state.registers.get(&Register::A);
@@ -116,7 +123,7 @@ pub fn execute_logical_instruction(state: &mut State, instruction: &LI) {
             let accum_value = state.registers.get(&Register::A);
             let carry = accum_value & 0x80 > 0;
 
-            let value = accum_value.rotate_left(1)
+            let value = accum_value << 1
                 | if state.registers.condition_flags.carry {
                     0x01
                 } else {
@@ -130,7 +137,7 @@ pub fn execute_logical_instruction(state: &mut State, instruction: &LI) {
             let accum_value = state.registers.get(&Register::A);
             let carry = accum_value & 0x01 > 0;
 
-            let value = accum_value.rotate_right(1)
+            let value = accum_value >> 1
                 | if state.registers.condition_flags.carry {
                     0x80
                 } else {

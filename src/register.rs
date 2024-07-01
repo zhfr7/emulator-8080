@@ -84,7 +84,7 @@ impl Registers {
 
     pub fn set_zero_sign_parity_flags(&mut self, value: u8) {
         self.condition_flags.zero = value == 0;
-        self.condition_flags.sign = value >> 7 == 0;
+        self.condition_flags.sign = value >> 7 == 1;
         self.condition_flags.parity = value.count_ones() % 2 == 0;
     }
 
@@ -141,8 +141,8 @@ impl Registers {
             Condition::Zero => self.condition_flags.zero,
             Condition::NoCarry => !self.condition_flags.carry,
             Condition::Carry => self.condition_flags.carry,
-            Condition::OddParity => !self.condition_flags.carry,
-            Condition::EvenParity => self.condition_flags.carry,
+            Condition::OddParity => !self.condition_flags.parity,
+            Condition::EvenParity => self.condition_flags.parity,
             Condition::Plus => !self.condition_flags.sign,
             Condition::Minus => self.condition_flags.sign,
         }

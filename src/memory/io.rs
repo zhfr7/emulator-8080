@@ -1,11 +1,11 @@
 use super::{Address, AddressableMemory};
 
 #[derive(Debug)]
-pub struct IOMemory([u8; u8::MAX as usize]);
+pub struct IOMemory([u8; u8::MAX as usize + 1]);
 
 impl IOMemory {
     pub fn new() -> Self {
-        IOMemory([0; u8::MAX as usize])
+        IOMemory([0; u8::MAX as usize + 1])
     }
 }
 

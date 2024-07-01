@@ -17,7 +17,7 @@ pub struct State {
 impl State {
     pub fn new() -> Self {
         Self {
-            enabled: false,
+            enabled: true,
             interrupt_enabled: true,
             program_counter: 0,
             registers: Registers::default(),
