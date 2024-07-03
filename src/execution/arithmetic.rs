@@ -5,6 +5,29 @@ use crate::{
 
 use super::{add, add_with_carry, sub, sub_with_borrow};
 
+fn decimal_adjust(value: u8, carry: bool, aux_carry: bool) -> (u8, bool, bool) {
+    let mut result = value;
+    let mut result_aux_carry = false;
+    let mut result_carry = carry;
+    let low_bits = value & 0x0F;
+
+    if low_bits > 9 || aux_carry {
+        result = result.wrapping_add(6);
+        result_aux_carry = result >> 4 != value >> 4;
+    }
+
+    let high_bits = result >> 4;
+
+    if high_bits > 9 || carry {
+        let (r, c) = result.overflowing_add(0x60);
+
+        result = r;
+        result_carry = c;
+    }
+
+    (result, result_carry, result_aux_carry)
+}
+
 fn update_state_from_operation(state: &mut State, (result, carry, aux_carry): (u8, bool, bool)) {
     state.registers.set(&Register::A, result);
     state.registers.set_zero_sign_parity_flags(result);
@@ -182,27 +205,31 @@ pub fn execute_arithmetic_instruction(state: &mut State, instruction: &AI) {
             state.registers.set_carry_flag(carry);
         }
         AI::DecimalAdjustAccum => {
-            let mut aux_carry = false;
-            let mut carry = state.registers.condition_flags.carry;
-            let mut bcd = state.registers.get(&Register::A);
-            let high_bits = bcd >> 4;
+            let value = state.registers.get(&Register::A);
 
-            if (bcd & 0b1111u8) > 9 || state.registers.condition_flags.aux_carry {
-                bcd = bcd.wrapping_add(6);
+            let (result, carry, aux_carry) = decimal_adjust(
+                value,
+                state.registers.condition_flags.carry,
+                state.registers.condition_flags.aux_carry,
+            );
 
-                aux_carry = bcd >> 4 != high_bits;
-            }
-
-            if (bcd >> 4) > 9 || state.registers.condition_flags.carry {
-                let (result, c) = bcd.overflowing_add(6 << 4);
-
-                bcd = result;
-                carry = c;
-            }
-
-            update_state_from_operation(state, (bcd, carry, aux_carry));
+            update_state_from_operation(state, (result, carry, aux_carry));
         }
     }
 
     state.increment_program_counter();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_decimal_adjust_correctly() {
+        let (r, c, ac) = decimal_adjust(0x9b, false, false);
+
+        assert_eq!(r, 0x01);
+        assert!(c);
+        assert!(ac);
+    }
 }

@@ -41,7 +41,7 @@ impl TestSystem {
         let operation = self.state.registers.get(&Register::C);
 
         match operation {
-            2 => print!("{}", char::from(self.state.registers.get(&Register::D))),
+            2 => print!("{}", char::from(self.state.registers.get(&Register::E))),
             9 => {
                 let mut address = self.state.registers.get_pair(&RegisterPair::DE);
                 let mut value = self.state.memory.get(address);

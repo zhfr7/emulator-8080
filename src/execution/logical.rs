@@ -9,7 +9,6 @@ fn update_state_from_value(state: &mut State, value: u8) {
     state.registers.set(&Register::A, value);
     state.registers.set_zero_sign_parity_flags(value);
     state.registers.set_carry_flag(false);
-    state.registers.set_aux_carry_flag(false);
 }
 
 pub fn execute_logical_instruction(state: &mut State, instruction: &LI) {
@@ -19,17 +18,26 @@ pub fn execute_logical_instruction(state: &mut State, instruction: &LI) {
             let accum_value = state.registers.get(&Register::A);
 
             update_state_from_value(state, value & accum_value);
+            state
+                .registers
+                .set_aux_carry_flag((accum_value | value & 0x08) != 0);
         }
         LI::AndMem => {
             let value = state.get_memory_value();
             let accum_value = state.registers.get(&Register::A);
 
             update_state_from_value(state, value & accum_value);
+            state
+                .registers
+                .set_aux_carry_flag((accum_value | value & 0x08) != 0);
         }
         LI::AndImmediate(value) => {
             let accum_value = state.registers.get(&Register::A);
 
             update_state_from_value(state, value & accum_value);
+            state
+                .registers
+                .set_aux_carry_flag((accum_value | value & 0x08) != 0);
 
             state.increment_program_counter();
         }
@@ -37,18 +45,21 @@ pub fn execute_logical_instruction(state: &mut State, instruction: &LI) {
             let value = state.registers.get(register);
             let accum_value = state.registers.get(&Register::A);
 
-            update_state_from_value(state, value ^ accum_value)
+            update_state_from_value(state, value ^ accum_value);
+            state.registers.set_aux_carry_flag(false);
         }
         LI::XorMem => {
             let value = state.get_memory_value();
             let accum_value = state.registers.get(&Register::A);
 
             update_state_from_value(state, value ^ accum_value);
+            state.registers.set_aux_carry_flag(false);
         }
         LI::XorImmediate(value) => {
             let accum_value = state.registers.get(&Register::A);
 
             update_state_from_value(state, value ^ accum_value);
+            state.registers.set_aux_carry_flag(false);
 
             state.increment_program_counter();
         }
@@ -57,17 +68,20 @@ pub fn execute_logical_instruction(state: &mut State, instruction: &LI) {
             let accum_value = state.registers.get(&Register::A);
 
             update_state_from_value(state, value | accum_value);
+            state.registers.set_aux_carry_flag(false);
         }
         LI::OrMem => {
             let value = state.get_memory_value();
             let accum_value = state.registers.get(&Register::A);
 
             update_state_from_value(state, value | accum_value);
+            state.registers.set_aux_carry_flag(false);
         }
         LI::OrImmediate(value) => {
             let accum_value = state.registers.get(&Register::A);
 
             update_state_from_value(state, value | accum_value);
+            state.registers.set_aux_carry_flag(false);
 
             state.increment_program_counter();
         }
