@@ -1,6 +1,4 @@
-use crate::memory::Address;
-
-use super::AddressableMemory;
+use super::{Address, AddressableMemory};
 
 #[derive(Debug)]
 pub struct InternalMemory([u8; u16::MAX as usize + 1]);

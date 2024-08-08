@@ -1,12 +1,9 @@
-use crate::{
+use crate::internal::{
     execution::execute_instruction,
-    instructions::{
-        parsers::parse_instruction, Instruction, MachineControlInstruction, Register, RegisterPair,
-    },
+    instructions::{Instruction, Register, RegisterPair},
+    memory::AddressableMemory,
     state::State,
 };
-
-pub use crate::memory::AddressableMemory;
 
 pub struct TestSystem {
     pub state: State,
@@ -16,7 +13,7 @@ impl TestSystem {
     pub fn new() -> Self {
         let mut state = State::new();
 
-        state.program_counter = 0x100;
+        state.program_counter.set(0x100);
 
         // Inject HLT at 0x00
         state.memory.set(0x00, 0x76);
@@ -38,12 +35,12 @@ impl TestSystem {
     }
 
     fn print(&mut self) {
-        let operation = self.state.registers.get(&Register::C);
+        let operation = self.state.get_register(&Register::C);
 
         match operation {
-            2 => print!("{}", char::from(self.state.registers.get(&Register::E))),
+            2 => print!("{}", char::from(self.state.get_register(&Register::E))),
             9 => {
-                let mut address = self.state.registers.get_pair(&RegisterPair::DE);
+                let mut address = self.state.get_register_pair(&RegisterPair::DE);
                 let mut value = self.state.memory.get(address);
 
                 while value != b'$' {
@@ -58,24 +55,19 @@ impl TestSystem {
     }
 
     pub fn run_current_instruction(&mut self) {
-        // Get the next two bytes after the program counter for parsing
-        // since instructions can be 3-bytes long
-        let end_address =
-            self.state.program_counter + (u16::MAX - self.state.program_counter).min(2);
+        // print!("{:#06x} ", self.state.program_counter.get());
 
-        let bytes = self
+        let instruction = self
             .state
-            .memory
-            .get_range(self.state.program_counter, end_address);
-
-        let instruction = parse_instruction(&bytes)
-            .map(|(_, instruction)| instruction)
-            .unwrap_or(Instruction::MachineControl(MachineControlInstruction::NoOp));
+            .program_counter
+            .get_next_instruction(&self.state.memory);
 
         execute_instruction(&mut self.state, &instruction);
 
-        if let Instruction::MachineControl(MachineControlInstruction::Output(_)) = &instruction {
+        if let Instruction::Output(_) = &instruction {
             self.print()
         }
+
+        // println!("{}:   {:#04x}", &instruction, self.state.registers.a);
     }
 }

@@ -1,9 +1,6 @@
-use crate::{
+use crate::internal::{
     execution::execute_instruction,
-    instructions::{
-        parsers::parse_instruction, timing::get_instruction_timing, BranchInstruction, Instruction,
-        MachineControlInstruction,
-    },
+    instructions::{timing::get_instruction_timing, Instruction},
     memory::AddressableMemory,
     state::State,
 };
@@ -35,24 +32,14 @@ impl System {
         self.state.memory.get_range(address_start, address_end)
     }
 
-    fn get_current_instruction(&self) -> Instruction {
-        // Get the next two bytes after the program counter for parsing
-        // since instructions can be 3-bytes long
-        let end_address =
-            self.state.program_counter + (u16::MAX - self.state.program_counter).min(2);
-
-        let bytes = self.read_memory_region(self.state.program_counter, end_address);
-
-        parse_instruction(&bytes)
-            .map(|(_, instruction)| instruction)
-            .unwrap_or(Instruction::MachineControl(MachineControlInstruction::NoOp))
-    }
-
     pub fn run(&mut self, max_clock_cycles: usize) {
         let mut clock_cycles: usize = 0;
 
         while self.state.enabled && clock_cycles < max_clock_cycles {
-            let instruction = self.get_current_instruction();
+            let instruction = self
+                .state
+                .program_counter
+                .get_next_instruction(&self.state.memory);
             let instruction_cycles = get_instruction_timing(&self.state, &instruction);
 
             execute_instruction(&mut self.state, &instruction);
@@ -73,9 +60,7 @@ impl System {
     }
 
     pub fn interrupt(&mut self, subroutine_address: u8) {
-        self.interrupt_instruction = Some(Instruction::Branch(BranchInstruction::Restart(
-            subroutine_address,
-        )));
+        self.interrupt_instruction = Some(Instruction::Restart(subroutine_address));
     }
 
     pub fn set_input(&mut self, port: u8, value: u8) {
